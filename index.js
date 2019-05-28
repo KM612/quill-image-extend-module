@@ -2,14 +2,14 @@
  *@description 观察者模式 全局监听富文本编辑器
  */
 export const QuillWatch = {
-    watcher: {},  // 登记编辑器信息
-    active: null,  // 当前触发的编辑器
-    on: function (imageExtendId, ImageExtend) {  // 登记注册使用了ImageEXtend的编辑器
+    watcher: {}, // 登记编辑器信息
+    active: null, // 当前触发的编辑器
+    on: function(imageExtendId, ImageExtend) { // 登记注册使用了ImageEXtend的编辑器
         if (!this.watcher[imageExtendId]) {
             this.watcher[imageExtendId] = ImageExtend
         }
     },
-    emit: function (activeId, type = 1) {  // 事件发射触发
+    emit: function(activeId, type = 1) { // 事件发射触发
         this.active = this.watcher[activeId]
         if (type === 1) {
             imgHandler()
@@ -31,11 +31,11 @@ export class ImageExtend {
         this.quill = quill
         this.quill.id = this.id
         this.config = config
-        this.file = ''  // 要上传的图片
-        this.imgURL = ''  // 图片地址
+        this.file = '' // 要上传的图片
+        this.imgURL = '' // 图片地址
         quill.root.addEventListener('paste', this.pasteHandle.bind(this), false)
         quill.root.addEventListener('drop', this.dropHandle.bind(this), false)
-        quill.root.addEventListener('dropover', function (e) {
+        quill.root.addEventListener('dropover', function(e) {
             e.preventDefault()
         }, false)
         this.cursorIndex = 0
@@ -71,7 +71,7 @@ export class ImageExtend {
             if (item && item.kind === 'file' && item.type.match(/^image\//i)) {
                 this.file = item.getAsFile()
                 let self = this
-                // 如果图片限制大小
+                    // 如果图片限制大小
                 if (self.config.size && self.file.size >= self.config.size * 1024 * 1024) {
                     if (self.config.sizeError) {
                         self.config.sizeError()
@@ -79,9 +79,9 @@ export class ImageExtend {
                     return
                 }
                 if (this.config.action) {
-                    // this.uploadImg()
+                    this.uploadImg()
                 } else {
-                    // this.toBase64()
+                    this.toBase64()
                 }
             }
         }
@@ -95,7 +95,7 @@ export class ImageExtend {
         QuillWatch.emit(this.quill.id, 0)
         const self = this
         e.preventDefault()
-        // 如果图片限制大小
+            // 如果图片限制大小
         if (self.config.size && self.file.size >= self.config.size * 1024 * 1024) {
             if (self.config.sizeError) {
                 self.config.sizeError()
@@ -131,66 +131,66 @@ export class ImageExtend {
         const self = this
         let quillLoading = self.quillLoading
         let config = self.config
-        // 构造表单
+            // 构造表单
         let formData = new FormData()
         formData.append(config.name, self.file)
-        // 自定义修改表单
+            // 自定义修改表单
         if (config.editForm) {
             config.editForm(formData)
         }
         // 创建ajax请求
         let xhr = new XMLHttpRequest()
         xhr.open('post', config.action, true)
-        // 如果有设置请求头
+            // 如果有设置请求头
         if (config.headers) {
             config.headers(xhr)
         }
         if (config.change) {
             config.change(xhr, formData)
         }
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    //success
-                    let res = JSON.parse(xhr.responseText)
-                    self.imgURL = config.response(res)
-                    QuillWatch.active.uploadSuccess()
-                    self.insertImg()
-                    if (self.config.success) {
-                        self.config.success()
+        xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        //success
+                        let res = JSON.parse(xhr.responseText)
+                        self.imgURL = config.response(res)
+                        QuillWatch.active.uploadSuccess()
+                        self.insertImg()
+                        if (self.config.success) {
+                            self.config.success()
+                        }
+                    } else {
+                        //error
+                        if (self.config.error) {
+                            self.config.error()
+                        }
+                        QuillWatch.active.uploadError()
                     }
-                } else {
-                    //error
-                    if (self.config.error) {
-                        self.config.error()
-                    }
-                    QuillWatch.active.uploadError()
                 }
             }
-        }
-        // 开始上传数据
-        xhr.upload.onloadstart = function (e) {
-            QuillWatch.active.uploading()
-            // let length = (self.quill.getSelection() || {}).index || self.quill.getLength()
-            // self.quill.insertText(length, '[uploading...]', { 'color': 'red'}, true)
-            if (config.start) {
-                config.start()
+            // 开始上传数据
+        xhr.upload.onloadstart = function(e) {
+                QuillWatch.active.uploading()
+                    // let length = (self.quill.getSelection() || {}).index || self.quill.getLength()
+                    // self.quill.insertText(length, '[uploading...]', { 'color': 'red'}, true)
+                if (config.start) {
+                    config.start()
+                }
             }
-        }
-        // 上传过程
-        xhr.upload.onprogress = function (e) {
-            let complete = (e.loaded / e.total * 100 | 0) + '%'
-            QuillWatch.active.progress(complete)
-        }
-        // 当发生网络异常的时候会触发，如果上传数据的过程还未结束
-        xhr.upload.onerror = function (e) {
-            QuillWatch.active.uploadError()
-            if (config.error) {
-                config.error()
+            // 上传过程
+        xhr.upload.onprogress = function(e) {
+                let complete = (e.loaded / e.total * 100 | 0) + '%'
+                QuillWatch.active.progress(complete)
             }
-        }
-        // 上传数据完成（成功或者失败）时会触发
-        xhr.upload.onloadend = function (e) {
+            // 当发生网络异常的时候会触发，如果上传数据的过程还未结束
+        xhr.upload.onerror = function(e) {
+                QuillWatch.active.uploadError()
+                if (config.error) {
+                    config.error()
+                }
+            }
+            // 上传数据完成（成功或者失败）时会触发
+        xhr.upload.onloadend = function(e) {
             if (config.end) {
                 config.end()
             }
@@ -205,7 +205,7 @@ export class ImageExtend {
         const self = QuillWatch.active
         self.quill.insertEmbed(QuillWatch.active.cursorIndex, 'image', self.imgURL)
         self.quill.update()
-        self.quill.setSelection(self.cursorIndex+1);
+        self.quill.setSelection(self.cursorIndex + 1);
     }
 
     /**
@@ -213,8 +213,7 @@ export class ImageExtend {
      */
     progress(pro) {
         pro = '[' + 'uploading' + pro + ']'
-        QuillWatch.active.quill.root.innerHTML
-            = QuillWatch.active.quill.root.innerHTML.replace(/\[uploading.*?\]/, pro)
+        QuillWatch.active.quill.root.innerHTML = QuillWatch.active.quill.root.innerHTML.replace(/\[uploading.*?\]/, pro)
     }
 
     /**
@@ -223,20 +222,18 @@ export class ImageExtend {
     uploading() {
         let length = (QuillWatch.active.quill.getSelection() || {}).index || QuillWatch.active.quill.getLength()
         QuillWatch.active.cursorIndex = length
-        QuillWatch.active.quill.insertText(QuillWatch.active.cursorIndex, '[uploading...]', {'color': 'red'}, true)
+        QuillWatch.active.quill.insertText(QuillWatch.active.cursorIndex, '[uploading...]', { 'color': 'red' }, true)
     }
 
     /**
      * 上传失败
      */
     uploadError() {
-        QuillWatch.active.quill.root.innerHTML
-            = QuillWatch.active.quill.root.innerHTML.replace(/\[uploading.*?\]/, '[upload error]')
+        QuillWatch.active.quill.root.innerHTML = QuillWatch.active.quill.root.innerHTML.replace(/\[uploading.*?\]/, '[upload error]')
     }
 
     uploadSuccess() {
-        QuillWatch.active.quill.root.innerHTML
-            = QuillWatch.active.quill.root.innerHTML.replace(/\[uploading.*?\]/, '')
+        QuillWatch.active.quill.root.innerHTML = QuillWatch.active.quill.root.innerHTML.replace(/\[uploading.*?\]/, '')
     }
 }
 
@@ -250,12 +247,12 @@ export function imgHandler() {
         fileInput.setAttribute('type', 'file');
         fileInput.classList.add('quill-image-input');
         fileInput.style.display = 'none'
-        // 监听选择文件
-        fileInput.addEventListener('change', function () {
+            // 监听选择文件
+        fileInput.addEventListener('change', function() {
             let self = QuillWatch.active
             self.file = fileInput.files[0]
             fileInput.value = ''
-            // 如果图片限制大小
+                // 如果图片限制大小
             if (self.config.size && self.file.size >= self.config.size * 1024 * 1024) {
                 if (self.config.sizeError) {
                     self.config.sizeError()
@@ -279,19 +276,16 @@ export function imgHandler() {
 export const container = [
     ['bold', 'italic', 'underline', 'strike'],
     ['blockquote', 'code-block'],
-    [{'header': 1}, {'header': 2}],
-    [{'list': 'ordered'}, {'list': 'bullet'}],
-    [{'script': 'sub'}, {'script': 'super'}],
-    [{'indent': '-1'}, {'indent': '+1'}],
-    [{'direction': 'rtl'}],
-    [{'size': ['small', false, 'large', 'huge']}],
-    [{'header': [1, 2, 3, 4, 5, 6, false]}],
-    [{'color': []}, {'background': []}],
-    [{'font': []}],
-    [{'align': []}],
+    [{ 'header': 1 }, { 'header': 2 }],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    [{ 'script': 'sub' }, { 'script': 'super' }],
+    [{ 'indent': '-1' }, { 'indent': '+1' }],
+    [{ 'direction': 'rtl' }],
+    [{ 'size': ['small', false, 'large', 'huge'] }],
+    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+    [{ 'color': [] }, { 'background': [] }],
+    [{ 'font': [] }],
+    [{ 'align': [] }],
     ['clean'],
     ['link', 'image', 'video']
 ]
-
-
-
