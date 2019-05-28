@@ -47,7 +47,7 @@ export class ImageExtend {
      * @param e
      */
     pasteHandle(e) {
-        e.preventDefault()
+        //e.preventDefault()
         QuillWatch.emit(this.quill.id, 0)
         let clipboardData = e.clipboardData
         let i = 0
