@@ -59,29 +59,23 @@ export class ImageExtend {
             if (!items) {
                 return;
             }
-            item = items[0];
-            types = clipboardData.types || [];
 
-            for (; i < types.length; i++) {
-                if (types[i] === 'Files') {
-                    item = items[i];
-                    break;
-                }
-            }
-            if (item && item.kind === 'file' && item.type.match(/^image\//i)) {
-                this.file = item.getAsFile()
-                let self = this
-                    // 如果图片限制大小
-                if (self.config.size && self.file.size >= self.config.size * 1024 * 1024) {
-                    if (self.config.sizeError) {
-                        self.config.sizeError()
+            for (item of items) {
+                if (item && item.kind === 'file' && item.type.match(/^image\//i)) {
+                    this.file = item.getAsFile()
+                    let self = this
+                        // 如果图片限制大小
+                    if (self.config.size && self.file.size >= self.config.size * 1024 * 1024) {
+                        if (self.config.sizeError) {
+                            self.config.sizeError()
+                        }
+                        return
                     }
-                    return
-                }
-                if (this.config.action) {
-                    this.uploadImg()
-                } else {
-                    this.toBase64()
+                    if (this.config.action) {
+                        this.uploadImg()
+                    } else {
+                        this.toBase64()
+                    }
                 }
             }
         }
